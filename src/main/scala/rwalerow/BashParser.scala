@@ -1,15 +1,14 @@
-import akka.actor.ActorSystem
+package rwalerow
 
-import scala.util.Success
-import akka.stream.{ActorMaterializer, ActorMaterializerSettings, Supervision}
+import akka.actor.ActorSystem
 import akka.stream.scaladsl._
+import akka.stream.{ActorMaterializer, ActorMaterializerSettings, Supervision}
 import com.typesafe.config.ConfigFactory
 import net.ruippeixotog.scalascraper.browser.JsoupBrowser
 import org.jsoup.HttpStatusException
-import rwalerow.Transformations
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.{Failure, Try}
+import scala.util.{Failure, Success, Try}
 
 object BashParser extends Transformations {
 
