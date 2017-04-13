@@ -31,7 +31,7 @@ object BashParser extends Transformations {
           runParsing(n)
         }
         case Failure(err) => {
-          println(s"Unable to parse ${args(0)} value to number")
+          println(s"Unable to parse ${args(0)} value to natural number")
           println(s"Got error: $err")
           println("Please try one more time")
         }
