@@ -28,6 +28,7 @@ trait Transformations extends JsonProtocol {
     Flow[Document]
       .mapConcat(_ >> elementList(".post"))
       .map(Entry.fromElement)
+      .filter(_.nonEmpty)
       .map(_.toJson)
       .map(_.prettyPrint)
 
