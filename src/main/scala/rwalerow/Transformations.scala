@@ -19,7 +19,7 @@ trait Transformations extends JsonProtocol {
   def pagesIds(last: Int): Source[Int, NotUsed] =
     Source(1 to last)
 
-  def downloadPage(bashLink: String): Flow[Int, Document, NotUsed] =
+  def downloadPage(browser: JsoupBrowser, bashLink: String): Flow[Int, Document, NotUsed] =
     Flow[Int]
       .map(s => bashLink + s)
       .map(link => JsoupBrowser().get(link))

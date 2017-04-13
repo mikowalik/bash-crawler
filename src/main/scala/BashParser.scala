@@ -64,7 +64,7 @@ object BashParser extends Transformations {
 
     val runnable =
       pagesIds(n)
-        .via(downloadPage(bashLink))
+        .via(downloadPage(browser, bashLink))
         .via(extractAndTransformEntries)
         .toMat(lineSink(outputFile))(Keep.right)
 
