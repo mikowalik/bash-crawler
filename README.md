@@ -2,7 +2,7 @@
 
 This simple application goal is to parse entries from bash.org.pl
 In order to reach its goal it uses:
-- Akka Config
+- Typesafe Config
 - Akka Streams
 
 # Running

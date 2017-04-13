@@ -22,7 +22,7 @@ trait Transformations extends JsonProtocol {
   def downloadPage(browser: JsoupBrowser, bashLink: String): Flow[Int, Document, NotUsed] =
     Flow[Int]
       .map(s => bashLink + s)
-      .map(link => JsoupBrowser().get(link))
+      .map(link => browser.get(link))
 
   val extractAndTransformEntries: Flow[Document, String, NotUsed] =
     Flow[Document]
