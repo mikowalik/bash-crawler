@@ -51,6 +51,10 @@ object BashParser extends Transformations {
         println(s"Encountered error status ${err.getStatusCode} while parsing page: ${err.getUrl}")
         Supervision.Resume
       }
+      case err => {
+        println(s"Encountered fatal error $err")
+        println("Parsing is being stopped")
+      }
     }
 
     implicit val system = ActorSystem("BashParser")
