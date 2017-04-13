@@ -54,6 +54,7 @@ object BashParser extends Transformations {
       case err => {
         println(s"Encountered fatal error $err")
         println("Parsing is being stopped")
+        Supervision.Stop
       }
     }
 
