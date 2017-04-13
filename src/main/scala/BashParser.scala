@@ -1,16 +1,17 @@
 import akka.actor.ActorSystem
 
 import scala.util.Success
-import akka.stream.ActorMaterializer
+import akka.stream.{ActorMaterializer, ActorMaterializerSettings, Supervision}
 import akka.stream.scaladsl._
 import com.typesafe.config.ConfigFactory
 import net.ruippeixotog.scalascraper.browser.JsoupBrowser
+import org.jsoup.HttpStatusException
 import rwalerow.Transformations
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Try}
 
-object Parser extends Transformations {
+object BashParser extends Transformations {
 
   def main(args: Array[String]): Unit = {
 
@@ -45,15 +46,26 @@ object Parser extends Transformations {
     val outputFile = config.getString("parser.output.file")
     val bashLink = config.getString("parser.link")
 
+    val errorHandler: Supervision.Decider = {
+      case err: HttpStatusException => {
+        println(s"Encountered error status ${err.getStatusCode} while parsing page: ${err.getUrl}")
+        Supervision.Resume
+      }
+    }
+
     implicit val system = ActorSystem("BashParser")
-    implicit val materializer = ActorMaterializer()
+    implicit val materializer = ActorMaterializer(
+      ActorMaterializerSettings(system).withSupervisionStrategy(errorHandler)
+    )
 
     val runnable =
-      (pagesIds(n) via downloadPage(bashLink) via extractAndTransformEntries())
+      pagesIds(n)
+        .via(downloadPage(bashLink))
+        .via(extractAndTransformEntries)
         .toMat(lineSink(outputFile))(Keep.right)
 
     runnable.run().onComplete(_ => {
-      println("finished")
+      println("Parsing finished")
       system.terminate()
     })
   }

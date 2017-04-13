@@ -15,6 +15,7 @@ import spray.json._
 import scala.concurrent.Future
 
 trait Transformations extends JsonProtocol {
+
   def pagesIds(last: Int): Source[Int, NotUsed] =
     Source(1 to last)
 
@@ -23,7 +24,7 @@ trait Transformations extends JsonProtocol {
       .map(s => bashLink + s)
       .map(link => JsoupBrowser().get(link))
 
-  def extractAndTransformEntries(): Flow[Document, String, NotUsed] =
+  val extractAndTransformEntries: Flow[Document, String, NotUsed] =
     Flow[Document]
       .mapConcat(_ >> elementList(".post"))
       .map(Entry.fromElement)
