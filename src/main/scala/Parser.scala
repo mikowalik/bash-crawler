@@ -1,68 +1,60 @@
-import java.nio.file.Paths
-
-import akka.NotUsed
 import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, IOResult}
-import akka.stream.scaladsl.{FileIO, Source}
-import net.ruippeixotog.scalascraper.browser.JsoupBrowser
-import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
-import net.ruippeixotog.scalascraper.dsl.DSL._
-import rwalerow.{Entry, JsonProtocol}
-import spray.json._
-import akka.{Done, NotUsed}
-import akka.actor.ActorSystem
-import akka.util.ByteString
 
-import scala.concurrent._
-import scala.concurrent.duration._
-import java.nio.file.Paths
-
-import akka.stream._
+import scala.util.Success
+import akka.stream.ActorMaterializer
 import akka.stream.scaladsl._
 import com.typesafe.config.ConfigFactory
-import net.ruippeixotog.scalascraper.model.Document
+import net.ruippeixotog.scalascraper.browser.JsoupBrowser
+import rwalerow.Transformations
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.util.{Failure, Try}
 
-object Parser extends App with JsonProtocol {
+object Parser extends Transformations {
 
-  val bashLink = "http://bash.org.pl/latest/?page="
-  val browser = JsoupBrowser()
-  val config = ConfigFactory.load()
-  val outputFile = config.getString("parser.output.file")
+  def main(args: Array[String]): Unit = {
 
-  implicit val system = ActorSystem("BashParser")
-  implicit val materializer = ActorMaterializer()
+    if(args.length > 1) println("You should pass only one argument")
+    else if(args.length == 0) {
+      println("You didn't pass any arguments")
+      println("Please try one more time")
+    }
+    else {
 
-  val n = 3
+      Try(args(0).toInt) match {
+        case Success(n) if n < 1 => {
+          println(s"Value passed($n) is 0 or lower then 0")
+          println("Please pass positive value")
+        }
+        case Success(n) => {
+          println(s"Running parser for $n latest pages")
+          runParsing(n)
+        }
+        case Failure(err) => {
+          println(s"Unable to parse ${args(0)} value to number")
+          println(s"Got error: $err")
+          println("Please try one more time")
+        }
+      }
+    }
+  }
 
-  val runnable =
-    (pagesIds(n) via downloadPage(bashLink) via extractAndTransformEntries())
-      .toMat(lineSink(outputFile))(Keep.right)
+  def runParsing(n: Int = 5): Unit = {
+    val browser = JsoupBrowser()
+    val config = ConfigFactory.load()
+    val outputFile = config.getString("parser.output.file")
+    val bashLink = config.getString("parser.link")
 
-  runnable.run().onComplete(_ => {
-    println("done")
-    system.terminate()
-  })
+    implicit val system = ActorSystem("BashParser")
+    implicit val materializer = ActorMaterializer()
 
-  def pagesIds(last: Int): Source[Int, NotUsed] =
-    Source(1 to last)
+    val runnable =
+      (pagesIds(n) via downloadPage(bashLink) via extractAndTransformEntries())
+        .toMat(lineSink(outputFile))(Keep.right)
 
-  def downloadPage(bashLink: String): Flow[Int, Document, NotUsed] =
-    Flow[Int]
-    .map(s => bashLink + s)
-    .map(link => JsoupBrowser().get(link))
-
-  def extractAndTransformEntries(): Flow[Document, String, NotUsed] =
-    Flow[Document]
-      .mapConcat(_ >> elementList(".post"))
-      .map(Entry.fromElement)
-      .map(_.toJson)
-      .map(_.prettyPrint)
-
-  def lineSink(filename: String): Sink[String, Future[IOResult]] =
-    Flow[String]
-      .map(s => ByteString(s + "\n"))
-      .toMat(FileIO.toPath(Paths.get(filename)))(Keep.right)
+    runnable.run().onComplete(_ => {
+      println("finished")
+      system.terminate()
+    })
+  }
 }
